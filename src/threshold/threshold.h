@@ -89,12 +89,18 @@ struct Th_Stat_
 ////////////////////////////////////////////////////////////////////////
 ///                         GLOABAL VAR                              ///
 ////////////////////////////////////////////////////////////////////////
-
+#ifndef THRELP_CPP
+#ifndef THRESHAREWEIGHT_CPP
+#ifndef THRELPBDD_CPP
 Vec_Ptr_t * current_TList;
 //Vec_Ptr_t * another_TList;
 Vec_Ptr_t * cut_TList;
 int         globalRef; // for iterative collapse
 Th_Stat     thProfiler;
+#endif
+Vec_Ptr_t *Th_aigMap;
+#endif
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 ///                    FUNCTION DECLARATIONS                         ///
@@ -188,8 +194,33 @@ extern void       Th_WriteBlif           ( Vec_Ptr_t * thre_list , const char * 
 
 extern Abc_Ntk_t* Th_Ntk2Mux             ( Vec_Ptr_t * , int , int );
 
-#endif
+//===test.c===================================//
 
+extern void       printGate(Thre_S*); 
+extern int lpCheck,good,bad,normal;
+
+//===threLPMerge.c===================================//
+
+extern void Th_CollapseNtk_LP( Vec_Ptr_t * TList , int fIterative , int fOutBound, int nMax );
+extern int Th_CollapseNodes_LP( const Thre_S * tObj2 , int nFanin , int fOutBound );
+extern int Th_CheckMultiFoutCollapse_LP( const Thre_S * tObj1 , int fOutBound );
+//extern Vec_Ptr_t* Th_CheckMultiFoutCollapse_LP( const Thre_S * tObj1 , int fOutBound );
+extern int Th_CalLPCollapse(const Thre_S* tObj1);
+
+//===threLPCollapse.cpp===================================//
+//extern "C" void       lp_Collapse(Thre_S* tObj1, Thre_S* tObj2);
+
+//===threLPCononical.cpp===================================//
+extern void Th_LibraryConstruct(char* FileName,int nVarNum);
+extern void Th_Canonical_Check();
+extern abctime accum;
+extern abctime accum2;
+
+//===threLPCononical.cpp===================================//
+extern Vec_Ptr_t* ShareWeightSyn(Vec_Ptr_t* vFuncs);
+
+#endif
+ 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///
 ////////////////////////////////////////////////////////////////////////

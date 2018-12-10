@@ -139,6 +139,9 @@ OBJ := \
 
 DEP := $(OBJ:.o=.d)
 
+# linking lp solve
+LP := -lm -ldl lib/lp_solve_5.5.2.5_dev/liblpsolve55.a
+
 # implicit rules
 
 %.o: %.c
@@ -182,7 +185,7 @@ tags:
 
 $(PROG): $(OBJ)
 	@echo "$(MSG_PREFIX)\`\` Building binary:" $(notdir $@)
-	$(VERBOSE)$(LD) -o $@ $^ $(LIBS)
+	$(VERBOSE)$(LD) -o $@ $^ $(LIBS) $(LP)
 
 lib$(PROG).a: $(OBJ)
 	@echo "$(MSG_PREFIX)\`\` Linking:" $(notdir $@)

@@ -29,24 +29,24 @@
 ///                        DECLARATIONS                              ///
 ////////////////////////////////////////////////////////////////////////
 
-// I/O commands
+static int Abc_CommandTestTH           ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandAig2Th           ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandTh2Blif          ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandTh2Mux           ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandMerge            ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandPrintThreshold   ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandOAO              ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandNZ               ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandReadThreshold    ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandWriteThreshold   ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandPrintThreshold   ( Abc_Frame_t * pAbc, int argc, char ** argv );
-// Synthesis commands
-static int Abc_CommandAig2Th           ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandMerge            ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandTh2Mux           ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandTh2Blif          ( Abc_Frame_t * pAbc, int argc, char ** argv );
-// Verification commands
-static int Abc_CommandPB_Threshold     ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandEC_Threshold     ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandCNF_Threshold    ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandThVerify         ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandNZ               ( Abc_Frame_t * pAbc, int argc, char ** argv );
-static int Abc_CommandOAO              ( Abc_Frame_t * pAbc, int argc, char ** argv );
-// misc commands
-static int Abc_CommandTestTH           ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandProfileTh        ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandTest             ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandConstructLib     ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandCheckCanonical   ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandShareWeightSyn   ( Abc_Frame_t * pAbc, int argc, char ** argv );
+
 static void Th_GlobalInit();
 
 ////////////////////////////////////////////////////////////////////////
@@ -65,6 +65,46 @@ static void Th_GlobalInit();
 
 ***********************************************************************/
 
+void 
+Threshold_Init( Abc_Frame_t *pAbc)
+{
+	 Th_GlobalInit();
+    Cmd_CommandAdd( pAbc, "z Alcom", "test_th"     , Abc_CommandTestTH,         1 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "NZ"          , Abc_CommandNZ,             1 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "OAO"         , Abc_CommandOAO,            0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "aig2th"      , Abc_CommandAig2Th,         1 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "th2blif"     , Abc_CommandTh2Blif,        0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "th2mux"      , Abc_CommandTh2Mux,         1 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "merge_th"    , Abc_CommandMerge,          1 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "print_th"    , Abc_CommandPrintThreshold, 0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "read_th"     , Abc_CommandReadThreshold,  1 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "write_th"    , Abc_CommandWriteThreshold, 0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "EC_th"       , Abc_CommandEC_Threshold,   0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "CNF_th"      , Abc_CommandCNF_Threshold,  0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "profile_th"  , Abc_CommandProfileTh,      0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "lp_test"     , Abc_CommandTest,           0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "lp_can"      , Abc_CommandCheckCanonical, 0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "lp_lib"      , Abc_CommandConstructLib,   0 );
+    Cmd_CommandAdd( pAbc, "z Alcom", "sw_syn"      , Abc_CommandShareWeightSyn, 0 );
+}
+
+void 
+Threshold_End( Abc_Frame_t *pAbc )
+{
+	if ( current_TList ) {
+      //printf( "current_TList = %p\n" , current_TList );
+      DeleteTList( current_TList );
+   }
+	/*if ( another_TList ) {
+      //printf( "another_TList = %p\n" , another_TList );
+      DeleteTList( another_TList );
+   }*/
+	if ( cut_TList ) {
+      //printf( "cut_TList = %p\n" , cut_TList );
+      DeleteTList( cut_TList );
+   }
+}
+
 void
 Th_GlobalInit()
 {
@@ -75,39 +115,11 @@ Th_GlobalInit()
 	 Th_ProfileInit();
 }
 
-void 
-Threshold_Init( Abc_Frame_t *pAbc)
-{
-	 Th_GlobalInit();
-    Cmd_CommandAdd( pAbc, "z Alcom", "read_th"     , Abc_CommandReadThreshold,  1 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "write_th"    , Abc_CommandWriteThreshold, 0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "print_th"    , Abc_CommandPrintThreshold, 0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "aig2th"      , Abc_CommandAig2Th,         1 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "merge_th"    , Abc_CommandMerge,          1 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "th2blif"     , Abc_CommandTh2Blif,        0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "th2mux"      , Abc_CommandTh2Mux,         1 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "PB_th"       , Abc_CommandPB_Threshold,   0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "CNF_th"      , Abc_CommandCNF_Threshold,  0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "thverify"    , Abc_CommandThVerify,       0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "NZ"          , Abc_CommandNZ,             1 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "OAO"         , Abc_CommandOAO,            0 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "test_th"     , Abc_CommandTestTH,         1 );
-    Cmd_CommandAdd( pAbc, "z Alcom", "profile_th"  , Abc_CommandProfileTh,      0 );
-}
-
-void 
-Threshold_End( Abc_Frame_t *pAbc )
-{
-	if ( current_TList ) { DeleteTList( current_TList ); current_TList = NULL; }
-	//if ( another_TList ) { DeleteTList( another_TList ); another_TList = NULL; }
-	if ( cut_TList )     { DeleteTList( cut_TList ); cut_TList = NULL; }
-}
-
 /**Function*************************************************************
 
-  Synopsis    [Threshold network reader.]
+  Synopsis    [Equivalence checking.]
 
-  Description []
+  Description [TH v.s. TH]
                
   SideEffects []
 
@@ -116,115 +128,45 @@ Threshold_End( Abc_Frame_t *pAbc )
 ***********************************************************************/
 
 int 
-Abc_CommandReadThreshold( Abc_Frame_t * pAbc, int argc, char ** argv )
+Abc_CommandOAO( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    //test_OAO(current_TList);
+    abctime clk;
+    
+    clk = Abc_Clock();
+    func_CNF_compareTH( current_TList, cut_TList);
+    //func_CNF_compareTH( current_TList, another_TList);
+    Abc_PrintTime( 1 , "CNF translation time : " , Abc_Clock() - clk );
+    return 0;
+}
+
+int Abc_CommandNZ( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+   abctime clk;
+
+   clk = Abc_Clock();
+   func_EC_compareTH( current_TList, cut_TList );
+   //func_EC_compareTH( current_TList, another_TList );
+   Abc_PrintTime( 1 , "PB translation time : " , Abc_Clock() - clk );
+    return 0;
+}
+
+/**Function*************************************************************
+	 Mapping for threshold cut 
+***********************************************************************/
+/*int Abc_CommandThIf(Abc_Frame_t * pAbc,int argc,char ** argv)
 {   
-    FILE * pFile;
-    char ** pArgvNew;
-    char * FileName;
-    int nArgcNew;
-    int c;
-    Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
-    {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
-    }
-    pArgvNew = argv + globalUtilOptind;
-    nArgcNew = argc - globalUtilOptind;
-    if ( nArgcNew != 1 )
-    {
-        Abc_Print( -1, "There is no file name.\n" );
-        return 1;
-    }
-
-    // get the input file name
-    FileName = pArgvNew[0];
-    if ( (pFile = fopen( FileName, "r" )) == NULL ) {
-        Abc_Print( -1, "Cannot open input file \"%s\". ", FileName );
-        if ( (FileName = Extra_FileGetSimilarName( FileName, ".blif", NULL, NULL, NULL, NULL )) )
-            Abc_Print( 1, "Did you mean \"%s\"?", FileName );
-        Abc_Print( 1, "\n" );
-        return 1;
-    }
-    fclose( pFile );
-    if (current_TList != NULL) {
-       DeleteTList(current_TList);
-       current_TList = NULL;
-       Abc_Print( 0, "Original current_TList destroyed.\n" );
-       //if (another_TList != NULL) DeleteTList(another_TList);
-       //another_TList = func_readFileOAO(FileName);
-    }
-    current_TList = func_readFileOAO(FileName);
-    return 0;
-
-usage:
-    Abc_Print( -2, "usage: read_th [-h] <file>\n" );
-    Abc_Print( -2, "\t         a reader for threshold gate '.th' files\n" );
-    Abc_Print( -2, "\t-h     : print the command usage\n");
-    Abc_Print( -2, "\t<file> : the file name\n");
     return 1;
 }
 
-/**Function*************************************************************
-
-  Synopsis    [Threshold network writer.]
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
-
-int 
-Abc_CommandWriteThreshold( Abc_Frame_t * pAbc,int argc, char ** argv )
+int Abc_CommandThreshold( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
-    char ** pArgvNew;
-    char * FileName;
-    int nArgcNew;
-    int c;
-
-    Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
-    {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
-    }
-    pArgvNew = argv + globalUtilOptind;
-    nArgcNew = argc - globalUtilOptind;
-    if ( nArgcNew != 1 )
-    {
-        Abc_Print( -1, "There is no file name.\n" );
-        return 1;
-    }
-
-    // get the input file name
-    FileName = pArgvNew[0];
-    if ( !current_TList ) {
-       printf("[Error] current threshold gateList is empty!!\n");
-       return 1;
-    }
-    dumpTh2FileNZ( current_TList , FileName );
-    return 0;
-
-usage:
-    Abc_Print( -2, "usage: write_th [-h] <file>\n" );
-    Abc_Print( -2, "\t         dump function  for threshold gate '.th' files\n" );
-    Abc_Print( -2, "\t-h     : print the command usage\n");
-    Abc_Print( -2, "\t<file> : the file name\n");
     return 1;
-}
+}*/
 
 /**Function*************************************************************
 
-  Synopsis    [Print statistics of a network.]
+  Synopsis    [Iteratively collapse a threshold network.]
 
   Description []
                
@@ -235,36 +177,75 @@ usage:
 ***********************************************************************/
 
 int 
-Abc_CommandPrintThreshold( Abc_Frame_t * pAbc, int argc, char ** argv )
+Abc_CommandMerge( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     FILE * pErr;
-    int c;
+	 int fIterative;
+    int c , i , fOutBound;
+	 abctime clk;
+
     pErr = Abc_FrameReadErr(pAbc);
+	 fIterative = 0;
+	 fOutBound  = -1;
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "Bih" ) ) != EOF )
     {
-       switch(c)
-       {
-          case 'h':
+       switch ( c )
+		 {
+           case 'B':
+               if ( globalUtilOptind >= argc ) {
+                  Abc_Print( -1, "Command line switch \"-B\" should be followed by an integer.\n" );
+                  goto usage;
+               }
+               fOutBound = atoi(argv[globalUtilOptind]);
+               globalUtilOptind++;
+               if ( fOutBound < 1 ) goto usage;
+               break;
+		    case 'i':
+			    fIterative ^= 1;
+			    break;
+		    default:
              goto usage;
-       }
+		 }
     }
 
-    if ( current_TList == NULL )
-    {
+	 if ( current_TList == NULL ) {
         fprintf( pErr, "\tEmpty threshold network.\n" );
         return 1;
-    }
+	 }
+    
+	 clk = Abc_Clock();
 
-    Th_PrintStat(current_TList);
+#if 0
+    i = 1;
+	 while ( true ) {
+		 if ( i > Th_NtkMaxFanout( current_TList ) ) break;
+		 else {
+	       Th_CollapseNtk( current_TList , fIterative , i );
+		    ++i;
+		 }
+	 }
+#else
+	 if ( fOutBound == -1 ) Th_CollapseNtk( current_TList , fIterative , fOutBound );
+	 else {
+	    for ( i = 1 ; i <= fOutBound ; ++i )
+	       Th_CollapseNtk( current_TList , fIterative , i );
+	 }
+#endif
+    // sort current_TList and clean up NULL objects
+    Th_NtkDfs();
+	 Abc_PrintTime( 1 , "collapse time : " , Abc_Clock()-clk );
     
 	 return 0;
+
 usage:
-    fprintf( pErr, "usage:    print_th [-h]\n" );
-    fprintf( pErr, "\t        print TH network statistics\n");
-    fprintf( pErr, "\t-h    : print the command usage\n");
-    return 1;
+    fprintf( pErr, "usage:    merge [-Bih]\n" );
+    fprintf( pErr, "\t        naive merging process for TList.\n");
+    fprintf( pErr, "\t-B num   : collapse from single fanout to num fanout\n");
+    fprintf( pErr, "\t-i       : toggle iterative collapse\n");
+    fprintf( pErr, "\t-h       : print the command usage\n");
+	 return 1;
 }
 
 /**Function*************************************************************
@@ -296,11 +277,7 @@ Abc_CommandAig2Th( Abc_Frame_t * pAbc, int argc, char ** argv )
     Extra_UtilGetoptReset();
     while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
     {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
+        goto usage;
     }
 
     if ( pNtk == NULL )
@@ -326,8 +303,8 @@ Abc_CommandAig2Th( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
         pNtk = pNtkRes;
     }
-    if ( current_TList ) {
-		 fprintf( pErr , "\tOriginal current_TList destroyed.\n" );
+    if ( current_TList != NULL) {
+		 fprintf( pErr , "\tOriginal TList destroyed...\n" );
 		 DeleteTList( current_TList );
 	 }
     current_TList = aig2Th( pNtk );
@@ -339,72 +316,6 @@ usage:
     fprintf( pErr, "\t        naive conversion from AIG to TList.\n");
     fprintf( pErr, "\t-h    : print the command usage\n");
     return 1;
-}
-
-/**Function*************************************************************
-
-  Synopsis    [Iteratively collapse a threshold network.]
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
-
-int 
-Abc_CommandMerge( Abc_Frame_t * pAbc, int argc, char ** argv )
-{
-    FILE * pErr;
-	 int fIterative;
-    int c , i , fOutBound;
-	 abctime clk;
-    pErr = Abc_FrameReadErr(pAbc);
-	 fIterative = 0;
-	 fOutBound  = -1;
-    Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "Bih" ) ) != EOF )
-    {
-       switch ( c )
-		 {
-           case 'B':
-               if ( globalUtilOptind >= argc ) {
-                  Abc_Print( -1, "Command line switch \"-B\" should be followed by an integer.\n" );
-                  goto usage;
-               }
-               fOutBound = atoi(argv[globalUtilOptind]);
-               globalUtilOptind++;
-               if ( fOutBound < 1 ) goto usage;
-               break;
-		    case 'i':
-			    fIterative ^= 1;
-			    break;
-		    default:
-             goto usage;
-		 }
-    }
-	 if ( current_TList == NULL ) {
-        fprintf( pErr, "\tEmpty threshold network.\n" );
-        return 1;
-	 }
-	 clk = Abc_Clock();
-	 if ( fOutBound == -1 ) Th_CollapseNtk( current_TList , fIterative , fOutBound );
-	 else {
-	    for ( i = 1 ; i <= fOutBound ; ++i )
-	       Th_CollapseNtk( current_TList , fIterative , i );
-	 }
-    // sort current_TList and clean up NULL objects
-    Th_NtkDfs();
-	 Abc_PrintTime( 1 , "collapse time : " , Abc_Clock()-clk );
-	 return 0;
-usage:
-    fprintf( pErr, "usage:    merge_th [-B <num>] [-ih]\n" );
-    fprintf( pErr, "\t        merging process for TList.\n");
-    fprintf( pErr, "\t-B num   : collapse from single fanout to num fanout\n");
-    fprintf( pErr, "\t-i       : toggle iterative collapse\n");
-    fprintf( pErr, "\t-h       : print the command usage\n");
-	 return 1;
 }
 
 /**Function*************************************************************
@@ -434,12 +345,9 @@ Abc_CommandTh2Blif( Abc_Frame_t * pAbc, int argc, char ** argv )
     Extra_UtilGetoptReset();
     while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
     {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
+        goto usage;
     }
+
     pArgvNew = argv + globalUtilOptind;
     nArgcNew = argc - globalUtilOptind;
     if ( nArgcNew != 1 ) {
@@ -448,6 +356,7 @@ Abc_CommandTh2Blif( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
     // get the output file name
     FileName = pArgvNew[0];
+
     if ( !current_TList ) {
 		 fprintf( pErr , "Empty threshold network.\n" );
 		 return 1;
@@ -456,11 +365,11 @@ Abc_CommandTh2Blif( Abc_Frame_t * pAbc, int argc, char ** argv )
     Th_WriteBlif( current_TList , FileName );
 	 Abc_PrintTime( 1 , "blif gen time " , Abc_Clock()-clk );
 	 fprintf( pErr , "File %s is written.\n" , FileName );
+
     return 0;
 usage:
-    fprintf( pErr, "usage:    th2blif [-h] <file>\n" );
+    fprintf( pErr, "usage:    th2blif [-h]\n" );
     fprintf( pErr, "\t        write out threshold network as blif file\n");
-    fprintf( pErr, "\tfile  : output file name\n");
     fprintf( pErr, "\t-h    : print the command usage\n");
     return 1;
 }
@@ -486,7 +395,7 @@ Abc_CommandTh2Mux( Abc_Frame_t * pAbc, int argc, char ** argv )
 	 abctime clk;
 	 
     fDynamic = 1;
-    fAhead   = 0;
+    fAhead   = 1;
 	 pNtk = Abc_FrameReadNtk(pAbc);
 	 pOut = Abc_FrameReadOut(pAbc);
     pErr = Abc_FrameReadErr(pAbc);
@@ -528,9 +437,162 @@ Abc_CommandTh2Mux( Abc_Frame_t * pAbc, int argc, char ** argv )
 usage:
     fprintf( pErr, "usage:    th2mux [-adh]\n" );
     fprintf( pErr, "\t        convert threshold network to mux trees\n");
-    fprintf( pErr, "\t-a    : toggles look-ahead dynamic variable selection [default = %s]\n" , fAhead ? "yes" : "no" );
-    fprintf( pErr, "\t-d    : toggles dynamic variable selection [default = %s]\n" , fDynamic ? "yes" : "no" );
+    fprintf( pErr, "\t-a    : toggles look-ahead dynamic variable selection [default = %s]\n" , "no" );
+    fprintf( pErr, "\t-d    : toggles dynamic variable selection [default = %s]\n" , "no" );
     fprintf( pErr, "\t-h    : print the command usage\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Print statistics of a network.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+
+int 
+Abc_CommandPrintThreshold( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    FILE * pErr;
+    int c;
+    pErr = Abc_FrameReadErr(pAbc);
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
+    {
+        goto usage;
+    }
+
+    if ( current_TList == NULL )
+    {
+        fprintf( pErr, "\tEmpty threshold network.\n" );
+        return 1;
+    }
+
+    Th_PrintStat(current_TList);
+    
+	 return 0;
+usage:
+    fprintf( pErr, "usage:    print_th [-h]\n" );
+    fprintf( pErr, "\t        print TH network statistics\n");
+    fprintf( pErr, "\t-h    : print the command usage\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Threshold network reader.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+
+int 
+Abc_CommandReadThreshold( Abc_Frame_t * pAbc, int argc, char ** argv )
+{   
+    FILE * pFile;
+    char ** pArgvNew;
+    char * FileName; //, * pTemp;
+    int nArgcNew;
+    int c;
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
+    {
+        goto usage;
+    }
+    pArgvNew = argv + globalUtilOptind;
+    nArgcNew = argc - globalUtilOptind;
+    if ( nArgcNew != 1 )
+    {
+        Abc_Print( -1, "There is no file name.\n" );
+        return 1;
+    }
+
+    // get the input file name
+    FileName = pArgvNew[0];
+    if ( (pFile = fopen( FileName, "r" )) == NULL )
+    {
+        Abc_Print( -1, "Cannot open input file \"%s\". ", FileName );
+        if ( (FileName = Extra_FileGetSimilarName( FileName, ".blif", NULL, NULL, NULL, NULL )) )
+            Abc_Print( 1, "Did you mean \"%s\"?", FileName );
+        Abc_Print( 1, "\n" );
+        return 1;
+    }
+    fclose( pFile );
+    if (current_TList != NULL) {
+       DeleteTList(current_TList);
+       current_TList = NULL;
+       Abc_Print( 0, "Original current_TList destroyed.\n" );
+       //if (another_TList != NULL) DeleteTList(another_TList);
+       //another_TList = func_readFileOAO(FileName);
+    }
+    current_TList = func_readFileOAO(FileName);
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: read_th [-h] <file>\n" );
+    Abc_Print( -2, "\t         a reader for threshold gate '.th' files\n" );
+    Abc_Print( -2, "\t-h     : print the command usage\n");
+    Abc_Print( -2, "\t<file> : the file name\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Threshold network writer..]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+
+int 
+Abc_CommandWriteThreshold( Abc_Frame_t * pAbc,int argc, char ** argv )
+{
+    char ** pArgvNew;
+    char * FileName; //, * pTemp;
+    int nArgcNew;
+    int c;
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
+    {
+        goto usage;
+    }
+    pArgvNew = argv + globalUtilOptind;
+    nArgcNew = argc - globalUtilOptind;
+    if ( nArgcNew != 1 )
+    {
+        Abc_Print( -1, "There is no file name.\n" );
+        return 1;
+    }
+
+    // get the input file name
+    FileName = pArgvNew[0];
+    if ( !current_TList) {
+       printf("[Error] current threshold gateList is empty!!\n");
+       return 1;
+    }
+    dumpTh2FileNZ( current_TList , FileName );
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: write_th [-h] <file>\n" );
+    Abc_Print( -2, "\t         dump function  for threshold gate '.th' files\n" );
+    Abc_Print( -2, "\t-h     : print the command usage\n");
+    Abc_Print( -2, "\t<file> : the file name\n");
     return 1;
 }
 
@@ -546,12 +608,12 @@ usage:
 
 ***********************************************************************/
 
-int Abc_CommandPB_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
+int Abc_CommandEC_Threshold( Abc_Frame_t * pAbc,int argc, char ** argv )
 {
     FILE * pOut, * pErr;
     Abc_Ntk_t * pNtk, * pNtkRes;
     char ** pArgvNew;
-    char * FileName;
+    char * FileName; //, * pTemp;
     int nArgcNew;
     int c;
     int fAllNodes      = 0;
@@ -559,35 +621,40 @@ int Abc_CommandPB_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
     int fCleanup       = 0;
 	 int fRemoveLatches = 0;
 	 abctime clk;
+
     pNtk = Abc_FrameReadNtk(pAbc);
     pOut = Abc_FrameReadOut(pAbc);
     pErr = Abc_FrameReadErr(pAbc);
+
     Extra_UtilGetoptReset();
     while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
     {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
+        goto usage;
     }
+
     pArgvNew = argv + globalUtilOptind;
     nArgcNew = argc - globalUtilOptind;
-    if ( nArgcNew != 1 ) {
+    if ( nArgcNew != 1 )
+    {
         Abc_Print( -1, "There is no file name.\n" );
         return 1;
     }
     // get the input file name
     FileName = pArgvNew[0];
-    if ( pNtk == NULL ) {
+
+    if ( pNtk == NULL )
+    {
         fprintf( pErr, "Empty network.\n" );
         return 1;
     }
+
     if ( !Abc_NtkIsComb( pNtk ) ) {
         fprintf(pErr, "\tnetwork is not comb, Make comb...\n");
 		  Abc_NtkMakeComb( pNtk , fRemoveLatches ); 
 	 }
-    if ( !Abc_NtkIsStrash( pNtk ) ) {
+
+    if ( !Abc_NtkIsStrash( pNtk ) )
+    {
         fprintf(pErr, "network is not AIG, Strashing...\n");
         // get the new network
         pNtkRes = Abc_NtkStrash( pNtk, fAllNodes, fCleanup, fRecord );
@@ -600,16 +667,18 @@ int Abc_CommandPB_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
         pNtk = pNtkRes;
     }
-    if (current_TList == NULL) {
+    if (current_TList == NULL)
+    {
         fprintf(pErr, "ERROR: current thresholdList is empty!!\n\n");
         return 1;
     }
 	 clk = Abc_Clock();
     func_EC_writePB(pNtk, current_TList, FileName);
-	 Abc_PrintTime( 1 , "pb gen time : " , Abc_Clock()-clk );
+	 Abc_PrintTime( 1 , "ec gen time : " , Abc_Clock()-clk );
+
     return 0;
 usage:
-    fprintf( pErr, "usage:  PB_th [-h] <fileName> \n" );
+    fprintf( pErr, "usage:  EC_th <fileName> [-h]\n" );
     fprintf( pErr, "\t       given strashNtk and thresholdNtk, print out Pseudo Boolean constraints for minisat+ to solve EC.\n");
     fprintf( pErr, "\t-h    : print the command usage\n");
     return 1;
@@ -628,12 +697,12 @@ usage:
 ***********************************************************************/
 
 int 
-Abc_CommandCNF_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
+Abc_CommandCNF_Threshold( Abc_Frame_t * pAbc,int argc, char ** argv )
 {    
     FILE * pOut, * pErr;
     Abc_Ntk_t * pNtk, * pNtkRes;
     char ** pArgvNew;
-    char * FileName;
+    char * FileName; // , * pTemp;
     int nArgcNew;
     int c;
     int fAllNodes      = 0;
@@ -641,18 +710,17 @@ Abc_CommandCNF_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
     int fCleanup       = 0;
 	 int fRemoveLatches = 0;
 	 abctime clk;
+
     pNtk = Abc_FrameReadNtk(pAbc);
     pOut = Abc_FrameReadOut(pAbc);
     pErr = Abc_FrameReadErr(pAbc);
+
     Extra_UtilGetoptReset();
     while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
     {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
+        goto usage;
     }
+
     pArgvNew = argv + globalUtilOptind;
     nArgcNew = argc - globalUtilOptind;
     if ( nArgcNew != 1 )
@@ -662,15 +730,20 @@ Abc_CommandCNF_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
     // get the input file name
     FileName = pArgvNew[0];
-    if ( pNtk == NULL ) {
+
+    if ( pNtk == NULL )
+    {
         fprintf( pErr, "Empty network.\n" );
         return 1;
     }
+
     if ( !Abc_NtkIsComb( pNtk ) ) {
         fprintf(pErr, "\tnetwork is not comb, Make comb...\n");
 		  Abc_NtkMakeComb( pNtk , fRemoveLatches ); 
 	 }
-    if ( !Abc_NtkIsStrash( pNtk ) ) {
+
+    if ( !Abc_NtkIsStrash( pNtk ) )
+    {
         fprintf(pErr, "network is not AIG, Strashing...\n");
         // get the new network
         pNtkRes = Abc_NtkStrash( pNtk, fAllNodes, fCleanup, fRecord );
@@ -683,188 +756,21 @@ Abc_CommandCNF_Threshold( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
         pNtk = pNtkRes;
     }
-    if (current_TList == NULL) {
+    if (current_TList == NULL)
+    {
         fprintf(pErr, "ERROR: current thresholdList is empty!!\n\n");
         return 1;
     }
 	 clk = Abc_Clock();
     func_EC_writeCNF(pNtk, current_TList, FileName);
 	 Abc_PrintTime( 1 , "ec gen time : " , Abc_Clock()-clk );
+
     return 0;
 usage:
-    fprintf( pErr, "usage:  CNF_th [-h] <fileName>\n" );
-    fprintf( pErr, "\t       given strashNtk and thresholdNtk, print out CNF for minisat to solve EC.\n");
+    fprintf( pErr, "usage:  CNF_th <fileName> [-h]\n" );
+    fprintf( pErr, "\t       given strashNtk and thresholdNtk, print out Pseudo Boolean constraints for minisat+ to solve EC.\n");
     fprintf( pErr, "\t-h    : print the command usage\n");
     return 1;
-}
-
-/**Function*************************************************************
-
-  Synopsis    [Threshold logic verification.]
-
-  Description [Generate a CNF/PB formula for eq checking for 2 TH ntks.]
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
-
-int 
-Abc_CommandThVerify( Abc_Frame_t * pAbc, int argc, char ** argv )
-{
-   char ** pArgvNew;
-   int nArgcNew, fVer, c;
-   fVer = 0;
-   Extra_UtilGetoptReset();
-   while ( ( c = Extra_UtilGetopt( argc , argv , "Vh" ) ) != EOF )
-   {
-       switch ( c )
-       {
-       case 'V':
-          if ( globalUtilOptind >= argc ) {
-              Abc_Print( -1 , "Command line switch \"-V\" should be followed by a positive integer.\n" );
-              goto usage;
-          }
-          fVer = atoi( argv[globalUtilOptind] );
-          globalUtilOptind++;
-          if ( fVer < 0 || fVer > 2 ) goto usage;
-          break;
-       case 'h':
-       default:
-           goto usage;
-       }
-   }
-   pArgvNew = argv + globalUtilOptind;
-   nArgcNew = argc - globalUtilOptind;
-   if ( nArgcNew != 2 ) {
-      Abc_Print( -1, "Extra/missing files are given: expected %d, received %d!\n" , 2 , nArgcNew );
-      goto usage;
-   }
-   if ( current_TList ) {
-      Abc_Print( 0, "Original current_TList destroyed.\n" );
-	   DeleteTList( current_TList ); 
-      current_TList = NULL;
-   }
-   current_TList = func_readFileOAO( pArgvNew[0] );
-   if ( !current_TList ) goto usage;
-   if ( cut_TList ) {
-      Abc_Print( 0, "Original cut_TList destroyed.\n" );
-	   DeleteTList( cut_TList ); 
-      cut_TList = NULL;
-   }
-   cut_TList = func_readFileOAO( pArgvNew[1] );
-   if ( !cut_TList ) { DeleteTList(current_TList); goto usage; }
-   if ( fVer == 0 ) func_EC_compareTH( current_TList, cut_TList );
-   else if ( fVer == 1 ) func_CNF_compareTH( current_TList, cut_TList );
-   else assert(0);
-   return 0;
-usage:
-    Abc_Print( -2, "usage:  thverify [-V <num>] [-h] <file1> <file2>\n" );
-    Abc_Print( -2, "\t          eq check between file1 and file2 via PB/CNF (output file name: compTH.opb/dimacs)\n");
-    Abc_Print( -2, "\t-V <num> :toggling verification methods (0: PB; 1: CNF), default = %d\n", fVer );
-    Abc_Print( -2, "\t<file1>  :the first TH file to be verified\n");
-    Abc_Print( -2, "\t<file2>  :the second TH file to be verified\n");
-    Abc_Print( -2, "\t-h       :print the command usage\n");
-    return 1;
-}
-
-/**Function*************************************************************
-
-  Synopsis    [Equivalence checking.]
-
-  Description [TH v.s. TH]
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
-
-int 
-Abc_CommandNZ( Abc_Frame_t * pAbc, int argc, char ** argv )
-{
-    int c;
-    abctime clk;
-    Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
-    {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
-    }
-    if ( !cut_TList ) {
-        Abc_Print( -1, "cut_TList is empty!\n" );
-        goto usage;
-    }
-    if ( !current_TList ) {
-        Abc_Print( -1, "current_TList is empty!\n" );
-        goto usage;
-    }
-    clk = Abc_Clock();
-    func_EC_compareTH( current_TList, cut_TList );
-    Abc_PrintTime( 1 , "PB translation time : " , Abc_Clock() - clk );
-    return 0;
-usage:
-    Abc_Print( -2, "usage:  NZ [-h]\n" );
-    Abc_Print( -2, "\t        eq check between cut_TList and current_TList by PB (filename: compTH.opb).\n");
-    Abc_Print( -2, "\t-h    : print the command usage\n");
-    return 1;
-}
-
-int 
-Abc_CommandOAO( Abc_Frame_t * pAbc, int argc, char ** argv )
-{
-    int c;
-    abctime clk;
-    Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "h" ) ) != EOF )
-    {
-       switch(c)
-       {
-          case 'h':
-             goto usage;
-       }
-    }
-    if ( !cut_TList ) {
-        Abc_Print( -1, "cut_TList is empty!\n" );
-        goto usage;
-    }
-    if ( !current_TList ) {
-        Abc_Print( -1, "current_TList is empty!\n" );
-        goto usage;
-    }
-    clk = Abc_Clock();
-    func_CNF_compareTH( current_TList, cut_TList );
-    Abc_PrintTime( 1 , "CNF translation time : " , Abc_Clock() - clk );
-    return 0;
-usage:
-    Abc_Print( -2, "usage:  OAO [-h]\n" );
-    Abc_Print( -2, "\t        eq check between cut_TList and current_TList by CNF (filename: compTH.dimacs).\n");
-    Abc_Print( -2, "\t-h    : print the command usage\n");
-    return 1;
-}
-
-/**Function*************************************************************
-
-  Synopsis    [Testing interface.]
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
-
-int 
-Abc_CommandTestTH( Abc_Frame_t * pAbc, int argc, char ** argv )
-{
-   dumpTh2FileNZ( cut_TList , "compTH_1.th" );
-   dumpTh2FileNZ( current_TList , "compTH_2.th" );
-   return 0;
 }
 
 /**Function*************************************************************
@@ -885,6 +791,219 @@ Abc_CommandProfileTh( Abc_Frame_t * pAbc, int argc, char ** argv )
 	Th_ProfilePrint();
 	return 0;
 }
+
+/**Function*************************************************************
+
+  Synopsis    [Testing interface.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+
+int 
+Abc_CommandTestTH( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+	//extern int Th_subSumSolveDP( Vec_Int_t * , int , int );
+   extern Pair_S* Th_CalKLDP( const Thre_S * , const Thre_S * , int , int , int );
+#if 0
+	Vec_Int_t * p = Vec_IntStart(4);
+	int bound = 0;
+	int fMax  = 1;
+	Vec_IntWriteEntry( p , 0 , 8 );
+	Vec_IntWriteEntry( p , 1 , 6 );
+	Vec_IntWriteEntry( p , 2 , 2 );
+	Vec_IntWriteEntry( p , 3 , 3 );
+	int optValue = Th_subSumSolveDP( p , bound , fMax );
+	printf( "optValue = %d\n" , optValue );
+	Vec_IntFree(p);
+#else
+	/*Thre_S * tObju , * tObjv;
+	Pair_S * pair;
+	tObju = ABC_ALLOC( Thre_S , 1 );
+	tObjv = ABC_ALLOC( Thre_S , 1 );
+	tObju->weights = Vec_IntStart(2);
+	Vec_IntWriteEntry( tObju->weights , 0 , 4 );
+	Vec_IntWriteEntry( tObju->weights , 1 , 3 );
+	tObju->thre = 5;
+	tObjv->weights = Vec_IntStart(2);
+	Vec_IntWriteEntry( tObjv->weights , 0 , 2 );
+	Vec_IntWriteEntry( tObjv->weights , 1 , 1 );
+	tObjv->thre = 3;
+   pair = Th_CalKLDP( tObju , tObjv , 0 , 2 , 0 );
+	Vec_IntFree( tObju->weights );
+	Vec_IntFree( tObjv->weights );
+   ABC_FREE(tObju);
+   ABC_FREE(tObjv);
+	ABC_FREE(pair);
+	return 0;*/
+#endif
+   Thre_S * tObj;
+	int i;
+
+	//Th_NtkDfs();
+	//printf( "current TList ptr = %p , size = %d\n" , current_TList , Vec_PtrSize(current_TList) );
+   Vec_PtrForEachEntry( Thre_S * , current_TList , tObj , i )
+   {
+      if ( tObj == NULL )  printf( " > id = %d , tObj = NULL\n" , i );
+      //Th_DumpObj( tObj );
+   }
+   return 0;
+}
+
+/*#include "test.c"*/
+int lpCheck=1;
+int good=0;
+int bad=0;
+int normal=0;
+int did=0;
+int 
+Abc_CommandTest( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+#if 0
+   int i; Thre_S* tObj;
+   Vec_PtrForEachEntry( Thre_S * , current_TList , tObj , i )
+      printGate(tObj);
+   //printf("%d\n",Vec_PtrSize(current_TList));
+        //Thre_S* tObj1=Vec_PtrEntry(current_TList,14);
+        //Thre_S* tObj2=Vec_PtrEntry(current_TList,15);
+        //Thre_S* tObj2=Vec_PtrEntry(current_TList,Vec_IntEntry(tObj1->Fanins,1));
+        //Thre_S* tObjMerge=Th_CreateObj(current_TList,Th_Node);
+        //Th_Collapse_LP(tObj1, tObj2,tObjMerge);
+        //Th_KLPatchFanio(tObj1,tObj2,tObjMerge);
+#endif
+#if 1
+	 abctime clk;
+	 clk = Abc_Clock();
+    int nMax=0;
+    if (argc>1)
+      nMax=atoi(argv[1]);
+    Th_CollapseNtk_LP( current_TList , 1 , -1 ,nMax);
+	 Abc_PrintTime( 1 , "LP merge time : " , Abc_Clock()-clk );
+    //printf("%d\n",Vec_PtrSize(current_TList));
+
+    Th_NtkDfs();
+#else
+    Th_CollapseNtk(current_TList,1,-1);
+   printf("good=%d bad=%d both succeed=%d\n", good,bad,normal);
+#endif
+   return 0;
+}
+
+int
+Abc_CommandConstructLib( Abc_Frame_t * pAbc,int argc, char ** argv )
+{
+   FILE * pErr;
+   char ** pArgvNew;
+   int nArgcNew;
+   char * FileName;
+   int nVarNum;
+   pErr = Abc_FrameReadErr(pAbc);
+   abctime clk;
+   Extra_UtilGetoptReset();
+   while (  Extra_UtilGetopt( argc, argv, "h" ) != EOF )
+   {
+      goto usage;
+   }
+   
+   pArgvNew = argv + globalUtilOptind;
+   nArgcNew = argc - globalUtilOptind;
+   if ( nArgcNew < 2 )
+   {
+      Abc_Print( -1, "No file name or no var num.\n" );
+      return 1;
+   }
+   // get the input file name
+   FileName = pArgvNew[0];
+   nVarNum = atoi(pArgvNew[1]);
+   clk = Abc_Clock();
+   Th_LibraryConstruct(FileName,nVarNum);
+   Abc_PrintTime( 1 , "library construction time : " , Abc_Clock()-clk );
+   
+   return 0;
+usage:
+   fprintf( pErr, "usage:  lp_lib <fileName> nVarNum [-h]\n" );
+   fprintf( pErr, "\t      build threshold library with the input truth table.\n");
+   fprintf( pErr, "\t-h    : print the command usage\n");
+   return 1;
+}
+
+int
+Abc_CommandCheckCanonical( Abc_Frame_t * pAbc,int argc, char ** argv )
+{
+   FILE * pErr;
+   char ** pArgvNew;
+   int nArgcNew;
+   char * FileName;
+   int nVarNum;
+   pErr = Abc_FrameReadErr(pAbc);
+   abctime clk;
+   Extra_UtilGetoptReset();
+   while (  Extra_UtilGetopt( argc, argv, "h" ) != EOF )
+   {
+      goto usage;
+   }
+   
+   pArgvNew = argv + globalUtilOptind;
+   nArgcNew = argc - globalUtilOptind;
+   clk = Abc_Clock();
+   Th_Canonical_Check();
+   Abc_PrintTime( 1 , "thre_lp_canonicity check time : " , Abc_Clock()-clk );
+   
+   return 0;
+usage:
+   fprintf( pErr, "usage:  lp_can [-h]\n" );
+   fprintf( pErr, "\t      check for threshold logic canonicity. Please read_th first.\n");
+   fprintf( pErr, "\t-h    : print the command usage\n");
+   return 1;
+}
+
+int
+Abc_CommandShareWeightSyn( Abc_Frame_t * pAbc,int argc, char ** argv )
+{
+   FILE * pErr;
+   char ** pArgvNew;
+   int nArgcNew;
+   char * FileName;
+   int nVarNum;
+   pErr = Abc_FrameReadErr(pAbc);
+   abctime clk;
+   Extra_UtilGetoptReset();
+   while (  Extra_UtilGetopt( argc, argv, "h" ) != EOF )
+   {
+      goto usage;
+   }
+   
+   pArgvNew = argv + globalUtilOptind;
+   nArgcNew = argc - globalUtilOptind;
+   clk = Abc_Clock();
+   
+   int i; Thre_S* tObj;
+   Vec_Ptr_t* vFuncs = Vec_PtrAlloc(Vec_PtrSize(current_TList));
+
+   Vec_PtrForEachEntry(Thre_S*, current_TList, tObj, i)
+   {
+      if (!tObj) continue;
+      if (tObj->Type != Th_Po) continue;
+      Vec_PtrPush(vFuncs, tObj);
+   }
+
+   Th_ShareWeightSyn(vFuncs); // sth = ...
+   Abc_PrintTime( 1 , "share weight synthesis time : " , Abc_Clock()-clk );
+   return 0;
+
+usage:
+   fprintf( pErr, "usage:  sw_syn [-h]\n" );
+   fprintf( pErr, "\t      share weight synthesis\n");
+   fprintf( pErr, "\t-h    : print the command usage\n");
+   return 1;
+}
+
+
+
 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///

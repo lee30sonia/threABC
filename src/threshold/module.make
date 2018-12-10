@@ -12,4 +12,11 @@ SRC += src/threshold/threCmd.c \
 	 src/threshold/threMultiFout.c \
 	 src/threshold/threKLCollapse.c \
 	 src/threshold/threTh2Blif.c \
-	 src/threshold/threTh2Mux.c
+	 src/threshold/threTh2Mux.c \
+    src/threshold/threLPMerge.c \
+    src/threshold/threLPCollapse.cpp \
+    src/threshold/threLPBDDCollapse.cpp \
+    src/threshold/threLPSolver.cpp \
+    src/threshold/threLPCanonical.c \
+    src/threshold/threShareWeight.cpp \
+
