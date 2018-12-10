@@ -149,32 +149,40 @@ alias bx          "comb; sx;"
 
 # Augusto command
 alias synth1      "&get; &synch2; &if -n -K 8; dsd_filter -t; &get; &synch2; &if -k -K 8; &ps"
-alias synthio     "synth1; &put; comb; print_fanio"
 alias synth2      "&get; &synch2; &if -n -K 8; dsd_filter -s; &get; &synch2; &if -k -K 8; dsd_ps; &ps"
+alias synthio     "synth1; &put; comb; print_fanio"
 
-# THsyn command
+# Threshold logic operation command
+## I/O commands
 alias rt  "read_th"
 alias wt  "write_th"
-alias ec  "EC_th"
-alias ef  "CNF_th"
+alias pt  "print_th"
+## Synthesis commands
 alias a2t "aig2th"
+alias mt  "merge_th"
 alias t2b "th2blif"
 alias t2m "th2mux"
-alias mt  "merge_th"
-alias pt  "print_th"
+## Verification commands
+alias pb  "PB_th"
+alias cnf "CNF_th"
+alias tvr "thverify"
+## misc commands
 alias tt  "test_th"
 alias ft  "profile_th"
 alias mpt "mt; pt"
 
 # For debug
-alias qq  "r s15850.blif; thexp; t2m -d"
+alias qq  "rt c432_2.th; mt"
 alias gg  "r b21.blif; a2t; mt; pt"
 alias zz  "r s13207.blif; a2t; mt; pt; q"
 alias QAQ "rt before.th; OAO;"
 
 # For experiment
 alias thexp  "st; ps; synthio; pt; mt -B 100; pt"
+alias thexp1 "comb; fraig; synthio; mt -B 100"
 alias thexp2 "st; ps; synthio; pt; mt; pt"
 alias thexp3 "a2t; pt; mt; pt"
-alias ecexp  "thexp; OAO; NZ;"
-alias ecexp2 "thexp; OAO;"
+alias ecexp  "comb; fraig; synth1; t2b compTH_1.blif; t2m; w compTH.aig; mt; NZ; OAO; t2m; time; cec -n compTH.aig; t2b compTH_2.blif; time; cec -n compTH_1.blif compTH_2.blif; time"
+alias ecexp1 "comb; fraig; synth1; t2b compTH_1.blif; t2m; w compTH.aig; mt -B 100; NZ; OAO; t2m; time; cec -n compTH.aig; t2b compTH_2.blif; time; cec -n compTH_1.blif compTH_2.blif; time"
+alias ecexp2 "thexp1; NZ; OAO"
+alias ecexp3 "thexp1; OAO;"

@@ -23,7 +23,7 @@ void func_EC_compareTH( Vec_Ptr_t * tList_1, Vec_Ptr_t * tList_2 )
 {
     char* fileName = "compTH.opb";
     FILE* oFile = fopen(fileName, "w");
-    printf("\tchecking Equalivance of current_TList and another_TList...\n");
+    printf("\tchecking Equalivance of cut_TList and current_TList...\n");
     printf("\tOutputFile: %s\n", fileName);
     fprintf(oFile, "min: -1*Z;\n");
     Vec_Ptr_t* thPO_1  = thre1_PB(oFile, tList_1);
@@ -334,9 +334,9 @@ void       Recurrsive_TH2(FILE*, Vec_Ptr_t*, Thre_S*, Vec_Str_t*, int, int);
 
 void func_CNF_compareTH( Vec_Ptr_t * tList_1, Vec_Ptr_t * tList_2 )
 {
-    char* fileName = "compTH.cnf";
+    char* fileName = "compTH.dimacs";
     FILE* oFile = fopen(fileName, "w");
-    printf("\tchecking Equalivance of current_TList and another_TList...\n");
+    printf("\tchecking Equalivance of cut_TList and current_TList...\n");
     printf("\tOutputFile: %s\n", fileName);
     fprintf(oFile, "c CNF file for th<->th equiv checking\n");
     Vec_Ptr_t* thPO_1  = thre1_CNF(oFile, tList_1);
@@ -433,7 +433,8 @@ Vec_Ptr_t* thre1_CNF(FILE* oFile, Vec_Ptr_t* TList )
         
 
         // construst a sorted version of this THnode
-        tObj = slow_sortByWeights( tObj_unsort );
+        //tObj = slow_sortByWeights( tObj_unsort );
+        tObj = slow_sortByAbsWeights( tObj_unsort );
         Vec_StrClear(sCNF);
         //printf("--- ID = %d ---\n", tObj->Id);
         
@@ -523,7 +524,8 @@ Vec_Ptr_t* thre2_CNF(FILE* oFile, Vec_Ptr_t* TList )
         
 
         // construst a sorted version of this THnode
-        tObj = slow_sortByWeights( tObj_unsort );
+        //tObj = slow_sortByWeights( tObj_unsort );
+        tObj = slow_sortByAbsWeights( tObj_unsort );
         Vec_StrClear(sCNF);
         //printf("--- ID = %d ---\n", tObj->Id);
         
