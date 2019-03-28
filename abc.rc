@@ -190,4 +190,5 @@ alias ecexp3 "thexp1; OAO;"
 # Canonical
 alias can "rt benchmarks/randomThre/10var.th; lp_can"
 alias lib "lp_lib benchmarks/npn2345/n2.txt 2"
+alias lib "lp_lib L2/sd7.txt 8"
 alias sw "rt benchmarks/npn2345/th/library5.th; sw_syn"

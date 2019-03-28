@@ -8,15 +8,15 @@
 *.gch
 *.pch
 # Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+#*.so
+#*.dylib
+#*.dll
 # Fortran module files
 *.mod
 # Compiled Static libraries
 *.lai
 *.la
-*.a
+#*.a
 *.lib
 # Executables
 bin/*
@@ -39,9 +39,13 @@ tags
 expEC/*
 exp/*
 log/*
+*.txt
 # circuit files
 *.aig
-*.blif
+#*.blif
 *.bench
-*.th
+#*.th
 benchmarks/*
+
+L2/*
+

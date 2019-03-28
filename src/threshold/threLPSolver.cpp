@@ -121,14 +121,15 @@ int solveLp(vector< vector<int> >& A, vector<int>& B, vector<int>& ans, int n)
       
       /* variable values */
       get_variables(lp, row);
+      cout<<"[";
       for(j = n; j < Ncol; j++)
       {
          //printf("%s: %f\n", get_col_name(lp, j + 1), row[j]);
          ans.push_back(row[j]);
-         //cout<<row[j]<<" ";
+         cout<<row[j]<<", ";
          //assert(ans.back()>=0);
       }
-      //cout<<endl;
+      cout<<"]"<<endl;
       for(j = 0; j < n; j++)
       {
          ans.push_back(row[j]);
@@ -696,15 +697,17 @@ int solveLpCanonical(vector< vector<int> >& A, vector<int>& B, vector<int>& ans,
    if (ret==0)
    {
       get_variables(lp, row);
+      cout<<"[";
       for(j = 0; j < A[0].size(); ++j){
       #if sym
          //cout<<row[symm[j]]<<" ";
          ans.push_back(row[symm[j]]);
       #else
-         //cout<<row[j]<<" ";
+         cout<<row[j]<<", ";
          ans.push_back(row[j]);
       #endif
-      }//cout<<endl;
+      }
+      cout<<"]"<<endl;
    }  
       
    /* free allocated memory */

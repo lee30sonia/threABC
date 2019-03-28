@@ -23,6 +23,7 @@ extern Abc_TtStore_t * Abc_TtStoreLoad( char * pFileName, int nVarNum );
 void Th_LibraryConstruct(char* FileName, int nVarNum)
 {
    Abc_TtStore_t* p = Abc_TtStoreLoad(FileName,-1);
+   //printf("%d %d %d %d\n",p->nVars, p->nFuncs, sizeof(word), p->nWords);
    if ( p==NULL )
    {
       printf( "File load failed.\n" );
@@ -30,7 +31,6 @@ void Th_LibraryConstruct(char* FileName, int nVarNum)
    }
    if (current_TList==0)
       current_TList = Vec_PtrAlloc( p->nFuncs *2);
-
    p->nVars=nVarNum;
    DdManager * dd = Cudd_Init( p->nVars , 0 , CUDD_UNIQUE_SLOTS , CUDD_CACHE_SLOTS , 0 );
    DdNode* bFunc,*bFunc2;
@@ -38,8 +38,8 @@ void Th_LibraryConstruct(char* FileName, int nVarNum)
    int n=0;
    for (i=0; i<p->nFuncs; ++i)
    {
-      offset = i*p->nWords;
-      bFunc = Kit_TruthToBdd(dd, p->pFuncs[offset],p->nVars,0); Cudd_Ref(bFunc);
+      //offset = i*p->nWords;
+      bFunc = Kit_TruthToBdd(dd, p->pFuncs[i],p->nVars,0); Cudd_Ref(bFunc);
       //printf("i=%d\n",i);
       //Cudd_PrintMinterm(dd,bFunc);
       Thre_S * tObj = Th_CreateObj( current_TList, Th_Node );
@@ -57,6 +57,7 @@ void Th_LibraryConstruct(char* FileName, int nVarNum)
           }
           printf("; %d]\n", tObj->thre);
       }
+      else printf("bdd2th failed\n");
       //printf("%d\n",Th_Bdd2th_LP(dd,bFunc,tObj));
 /*
       bFunc2 = Cudd_Not(bFunc); Cudd_Ref(bFunc2);
@@ -104,6 +105,7 @@ void Th_Canonical_Check()
       //Thre_S* tObj2 = Th_CreateObj( current_TList, Th_Node );
       if (!Th_Bdd2th_LP(dd,bFunc,0)) printf("solve failed\n");
       //printGate(tObj2);
+      Cudd_RecursiveDeref(dd,bFunc);
    }
    Abc_PrintTime( 1 , "solve time" ,  accum );
    Cudd_Quit(dd); 
