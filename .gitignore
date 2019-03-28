@@ -45,7 +45,8 @@ log/*
 #*.blif
 *.bench
 #*.th
-benchmarks/*
+benchmarks/npn2345/*
+benchmarks/randomThre/*
 
 L2/*
 
